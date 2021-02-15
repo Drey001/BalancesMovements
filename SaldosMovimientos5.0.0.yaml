@@ -1,0 +1,506 @@
+openapi: 3.0.0
+info:
+  title: Consulta Saldos y Movimientos
+  description: Éstos son los servicios que serán expuestos. Incluye los datos necesarios para interactuar con el servicio de saldos mas movimientos.
+  version: 1.0.0
+  
+
+paths:
+  # --------------------------------
+  #  Consulta Saldos y Movimientos
+  # --------------------------------
+  /balance-transaction:
+    post:
+      security:
+        - bearerAuth: []
+      tags:
+        - Consulta Saldos y Movimientos
+      summary: Consultar saldos y movimientos de cuentas en fechas determinadas.
+      description: Esta operación retorna el saldo de una cuenta corriente o ahorros y el listado de los movimientos para dicha cuenta en un rango de fechas solicitado.
+      parameters:
+        - in: header
+          name: "message-id"
+          schema:
+            type: string
+            format: uuid
+            example: "8348c30c-1296-4882-84b8-d7306205ce26"
+          description: ID para trazabilidad de la transacción. Debe ser proporcionado por el front
+          required: true
+        - in: header
+          name: "session-tracker"
+          schema:
+            type: string
+            format: uuid
+            example: "15980943-5fcd-4423-a948-b015452d7479"
+          description: ID para trazabilidad de la sesión. Debe ser proporcionado por el front. Esta sesión hace parte del contexto de la aplicación
+          required: true
+        - in: header
+          name: "authorization"
+          schema:
+            type: string
+            example: "APP"
+          description: Token JWT/JWS con la información de seguridad y atributos(claims) asociados a la identidad del usuario(ClientId, ClientType,....)
+          required: true
+        - in: header
+          name: "channel"
+          schema:
+            type: string
+            example: "APP"
+          description: Identificador del canal que esta usando el servicio.
+          required: true
+        - in: header
+          name: "request-timestamp"
+          schema:
+            type: string
+            format: utf-8 
+            example: "2019/08/23 15:59:00:000:000"
+          description: Timestamp del consumidor
+          required: true
+        - in: header
+          name: "client-ip"
+          schema:
+            type: string
+            example: "192.168.164.25"
+          description: Ip del dispositivo en el cual se generó la petición.
+          required: true
+        - in: header
+          name: "user-agent"
+          schema:
+            type: string
+            example: ""
+          description: User Agent para identificación del dispositivo
+          required: true
+        - in: header
+          name: "device-id"
+          schema:
+            type: string
+            example: ""
+          description: Identificador único del dispositivo
+          required: true
+        - in: header
+          name: "platform-type"
+          schema:
+            type: string
+            example: ""
+          description: tipo de plataforma desde donde llega la petición, dominio de valores (web - mobile)
+          required: true
+        - in: header
+          name: "app-version"
+          schema:
+            type: string
+            example: ""
+          description: Versión de la aplicación desde donde se recibió la petición
+          required: true
+        
+      requestBody:
+        content:
+          application/alineaciones.ejercicios.v2+json:
+            schema:
+              $ref: "#/components/schemas/requestBody_POST_balance_transaction"
+      responses:
+        200:
+          description: 200 ok
+          content:
+            application/alineaciones.ejercicios.v2+json:
+              schema:
+                $ref: "#/components/schemas/successResponse_POST_customerBalance"
+                  
+        default:
+          description: Mensaje de error por defecto
+          content:
+            application/alineaciones.ejercicios.v2+json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    $ref: "#/components/schemas/Error"
+                    
+  
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: "bearer"
+      bearerFormat: "JWT"
+
+  schemas:
+    Links:
+      type: object
+      description: "A resource object MAY contain references to other resource objects"
+      properties:
+        self:
+          description: A self member, whose value is a URL for the relationship data
+          type: string
+          format: uri
+        next:
+          type: string
+          format: uri
+
+
+    Error:
+      type: array
+      description: Información general de la oportunidad comercial
+      items:
+        type: object
+        required:
+        - "reason"
+        - "domain"
+        - "code"
+        - "message"
+        - "type"
+        properties:
+          reason:
+            description: An application-specific error code, expressed as a string value.
+            type: string
+            example: Lo sentimos, tenemos inconvenientes con nuestros sistemas, nuestro equipo se encuentra trabajando
+                     para brindarte una solución.
+          domain:
+            description: A short, human-readable summary of the problem. It **SHOULD NOT** change from occurrence to occurrence of the problem, except for purposes of localization.
+            type: string
+            example: ERROR
+          code:
+            description: A human-readable explanation specific to this occurrence of the problem.
+            type: string
+            example: 401
+          message:
+            description: Servity of error.
+            type: string
+            example: Lo sentimos, tenemos inconvenientes con nuestros sistemas,
+                     nuestro equipo se encuentra trabajando para brindarte una solución
+          type:
+            description: Servity of error.
+            type: string
+            example: Info
+    
+    error:
+      type: object
+      description: Estructura general de código de respuesta
+      properties:
+        code:
+          description: An application-specific error code, expressed as a string value.
+          type: string
+          example: 000
+        title:
+          description: A short, human-readable summary of the problem. It **SHOULD NOT** change from occurrence to occurrence of the problem, except for purposes of localization.
+          type: string
+          example: TRANSACCION EXITOSA
+        detail:
+          description: A human-readable explanation specific to this occurrence of the problem.
+          type: string
+          example: TRANSACCION EXITOSA
+        Severity:
+          description: Servity of error.
+          type: string
+          example: INFO
+          
+          
+    account:
+      type: object
+      required:
+        - type
+        - number
+      properties:
+        number:
+          type: string
+          minLength: 1
+          maxLength: 16
+          description: Número de la cuenta a la cual se le desean consultar los movimientos.
+          example: '1530951240'
+        type:
+          type: string
+          description: Tipo de cuenta a la cual se le desean consultar los movimientos.
+          example: 'CUENTA DE AHORRO, CUENTA CORRIENTE'
+      additionalProperties: false
+      
+    transaction:
+      type: object
+      required:
+        - startDate
+        - endDate
+      properties:
+        startDate:
+          type: string
+          description: Fecha a partir de la cual se desean consultar los movimientos de la cuenta.
+          example: '2020-01-01'
+        endDate:
+          type: string
+          description: Fecha hasta la cual se desean consultar los movimientos de la cuenta.
+          example: '2020-01-30'
+      additionalProperties: false
+    
+    office:
+      type: object
+      required:
+        - code
+        - name
+      properties:
+        code:
+          type: string
+          minLength: 1
+          maxLength: 8
+          description: Código de la oficina donde se realizó la       transacción o de la oficina dueña de la cuenta a la que pertenece la transacción.
+          example: '2005678'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 50
+          description: nombre de la oficina donde se realizó la transacción o de la oficina dueña de la cuenta a la que pertenece la transacción.
+          example: '2005678'
+      additionalProperties: false
+    
+    relatedTransferAccount:
+      type: object
+      required:
+        - type
+        - number
+      properties:
+        type:
+          type: string
+          description: Tipo de cuenta asociada al movimiento (origen            o destino).
+          example: 'CUENTA_DE_AHORRO'
+          enum:
+          - CUENTA_DE_AHORRO
+          - CUENTA_CORRIENTE
+        number:
+          type: string
+          minLength: 1
+          maxLength: 16
+          description: Numero de cuenta asociada al movimiento (origen o destino).
+          example: '58053658413'
+      additionalProperties: false
+    
+    transactionrp:
+      type: object
+      required:
+        - documentNumber
+        - documentType
+      properties:
+        id:
+          type: string
+          minLength: 1
+          maxLength: 6
+          description: código de la transacción que identifica el                tipo de movimiento en depositos.
+          example: '8316'
+        postedDate:
+          type: string
+          description: Fecha efectiva en la cual se hace la                     afectación del saldo de la cuenta, puede ser             de días anteriores.
+          example: '2020-03-01'
+        description:
+          type: string
+          minLength: 1
+          maxLength: 50
+          description: Descripción o nombre del movimiento.
+          example: 'Abono preautorizado donación'
+        amount:
+          type: number
+          minLength: 1
+          maxLength: 16
+          description: Valor del movimiento.
+          example: 12,400.0000
+        type:
+          type: string
+          description: Valor del movimiento.
+          example: 'DEBITO'
+        reference1:
+          type: string
+          minLength: 0
+          maxLength: 50
+          description: Texto libre.
+          example: ' '
+        reference2:
+          type: string
+          minLength: 0
+          maxLength: 50
+          description: Texto libre.
+          example: ' '
+        reference3:
+          type: string
+          minLength: 0
+          maxLength: 50
+          description: Texto libre.
+          example: ' '
+        checkNumber:
+          type: string
+          minLength: 0
+          maxLength: 16
+          description: Valor del movimiento.
+          example: 'NULL'
+      additionalProperties: false
+    
+      
+    balances:
+      type: object
+      required:
+        - documentNumber
+        - documentType
+      properties:
+        available:
+          type: number
+          minLength: 0
+          maxLength: 16
+          description: Saldo disponible.
+          example: 25,000,000.0000
+        availableOverdraftBalance:
+          type: number
+          minLength: 0
+          maxLength: 16
+          description: Saldo disponible. + Valor cupo de sobregiro.
+          example: 0
+        overdraftValue:
+          type: number
+          minLength: 0
+          maxLength: 16
+          description: Valor total del Cupo de Sobregiro.
+          example: ' '
+        availableOverdraftQuota:
+          type: number
+          minLength: 0
+          maxLength: 16
+          description: Valor del Cupo de Sobregiro que se puede                  utilizar.
+          example: ' '
+        cash:
+          type: number
+          minLength: 0
+          maxLength: 16
+          description: Saldo en efectivo.
+          example: 25,000,000.0000
+        unavailableClearing:
+          type: number
+          minLength: 0
+          maxLength: 16
+          description: Saldo en canje.
+          example: 0.0000
+        receivable:
+          type: number
+          minLength: 0
+          maxLength: 16
+          description: Saldos en cuentas por cobrar.
+          example: 1,500,000.0000
+        blocked:
+          type: number
+          minLength: 0
+          maxLength: 16
+          description: Saldo bloqueado.
+          example: 0.0000
+        unavailableStartDayClearingStartDay:
+          type: number
+          minLength: 0
+          maxLength: 16
+          description: Saldo en canje al inicio del día.
+          example: 0.0000
+        cashStartDay:
+          type: number
+          minLength: 0
+          maxLength: 16
+          description: Saldo en efectivo al inicio del día.
+          example: 18,000,000.0000
+        pockets:
+          type: number
+          minLength: 0
+          maxLength: 16
+          description: Saldo de bolsillos.
+          example: 5,000,000.000
+        remittanceQuota:
+          type: number
+          minLength: 0
+          maxLength: 16
+          description: Cupo remesas consignadas.
+          example: 0.0000
+        agreedRemittanceQuota:
+          type: number
+          minLength: 0
+          maxLength: 16
+          description: Cupo remesa negociada.
+          example: 0.0000
+        remittanceQuotaUsage:
+          type: number
+          minLength: 0
+          maxLength: 16
+          description: Saldo utilizado cupo de la remesa.
+          example: 0.0000
+        normalInterest:
+          type: number
+          minLength: 0
+          maxLength: 16
+          description: Intereses de sobregiro que tienen menos de 90            días.
+          example: ' '
+        suspensionInterest:
+          type: number
+          minLength: 0
+          maxLength: 16
+          description: Intereses de sobregiro que tienen mas de 90             días o menos dependiendo de la calificación             del cliente..
+          example: ' '
+      additionalProperties: false
+        
+    requestBody_POST_balance_transaction:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+            type: object
+            properties:
+              size:
+                type: number
+                minLength: 1
+                maxLength: 2
+                description: Cantidad de registros por página.
+                example: 30
+              key:
+                type: number
+                minLength: 0
+                maxLength: 50
+                description: Número de la página.
+                example: 2
+              account:
+                    $ref: "#/components/schemas/account"
+              transaction:
+                    $ref: "#/components/schemas/transaction"
+      additionalProperties: false
+      
+    successResponse_POST_customerBalance:
+      required:
+        - "data"
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            responseSize:
+             type: number
+             description: Total de registros.
+             example: 276
+            flagMoreRecords:
+             type: boolean
+             description: Indica si existen mas registros en la                solicitud
+             example: false 
+            account:
+              type: object
+              required:
+                - "balances"
+                - "transaction"
+                - "office"
+                - "customer"
+              properties:
+                balances:
+                 $ref: "#/components/schemas/balances"
+                transaction:
+                 items:
+                  $ref: "#/components/schemas/transactionrp"
+                office:
+                  $ref: "#/components/schemas/office"
+                relatedTransferAccount:
+                  $ref: "#/components/schemas/relatedTransferAccount"
+                customer:
+                  type: object
+                  properties:
+                   name:
+                    type: string
+                    minLength: 1
+                    maxLength: 100
+                    description: Nombre completo del cliente titular de la cuenta asociada a la transferencia, aplica para transferencias.
+                    example: ''
+      additionalProperties: false
+      
+      
+      
