@@ -1,0 +1,12 @@
+rootProject.name = 'BalancesMovements'
+
+include ':app-service'
+include ':model'
+include ':usecase'
+include ':reactive-rest-balance'
+project(':app-service').projectDir = file('./applications/app-service')
+project(':model').projectDir = file('./domain/model')
+project(':usecase').projectDir = file('./domain/usecase')
+project(':reactive-rest-balance').projectDir = file('./infrastructure/driven-adapters/reactive-rest-balance')
+include ':reactive-web'
+project(':reactive-web').projectDir = file('./infrastructure/entry-points/reactive-web')
